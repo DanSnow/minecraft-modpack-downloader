@@ -35,5 +35,5 @@ It's using the same API endpoint from [mc-curseforge-api](https://github.com/Mon
 TODO
 ----
 
-- [ ] able to configure output path
+- [x] able to configure output path
 - [ ] copy overrides
