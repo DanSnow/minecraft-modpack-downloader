@@ -5,6 +5,7 @@ pub struct Manifest {
     pub name: String,
     pub minecraft: Minecraft,
     pub files: Vec<Mod>,
+    pub overrides: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

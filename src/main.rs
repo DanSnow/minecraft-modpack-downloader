@@ -12,8 +12,11 @@ use std::{
 use tokio::sync::Semaphore;
 
 mod api;
+mod copy_dir;
 mod download;
 mod model;
+
+use crate::copy_dir::copy_dir_all;
 
 #[derive(Debug, Options)]
 struct Args {
@@ -57,9 +60,9 @@ async fn main() -> Result<()> {
             .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
             .progress_chars("##-"),
     );
-    let path = create_output_path(&args, &manifest.name)?;
-    fs::create_dir_all(&path)?;
-    let _ = OUTPUT.set(path);
+    let output_path = create_output_path(&args, &manifest.name)?;
+    fs::create_dir_all(&output_path)?;
+    let _ = OUTPUT.set(output_path);
     let total = manifest.files.len() as u64;
     stream::iter(manifest.files.iter())
         .for_each(|&file| {
@@ -90,6 +93,12 @@ async fn main() -> Result<()> {
         })
         .await;
     mp.join()?;
+    let mut path = fs::canonicalize(&args.manifest_path)?;
+    path.pop();
+    path.push(manifest.overrides);
+    if path.exists() {
+        copy_dir_all(path, OUTPUT.get().unwrap().clone()).await?;
+    }
     Ok(())
 }
 
