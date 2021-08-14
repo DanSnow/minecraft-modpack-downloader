@@ -1,5 +1,5 @@
 use color_eyre::{eyre::eyre, Result};
-use futures::StreamExt;
+use futures_lite::{stream, StreamExt};
 use gumdrop::Options;
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use once_cell::sync::{Lazy, OnceCell};
@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
     fs::create_dir_all(&path)?;
     let _ = OUTPUT.set(path);
     let total = manifest.files.len() as u64;
-    futures::stream::iter(manifest.files.iter())
+    stream::iter(manifest.files.iter())
         .for_each(|&file| {
             let mp = mp.clone();
             let pb_guard = ProgressGuard {
@@ -87,7 +87,6 @@ async fn main() -> Result<()> {
                 drop(pb_guard);
                 Ok::<(), color_eyre::eyre::Error>(())
             });
-            futures::future::ready(())
         })
         .await;
     mp.join()?;

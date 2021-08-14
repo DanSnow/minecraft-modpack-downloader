@@ -16,8 +16,8 @@ pub async fn download(mp: Arc<MultiProgress>, path: PathBuf, url: String, len: u
     let mut file = File::create(&path).await?;
     let pb = mp.add(ProgressBar::new(len));
     pb.set_style(STYLE.clone());
-    let name = path.file_name().unwrap().to_str().unwrap();
-    pb.set_message(name);
+    let name = path.file_name().unwrap().to_str().unwrap().to_owned();
+    pb.set_message(name.clone());
     let mut downloaded = 0;
     while let Some(chunk) = res.chunk().await? {
         downloaded += chunk.len();
