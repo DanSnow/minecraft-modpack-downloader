@@ -1,6 +1,6 @@
+use clap::Parser;
 use color_eyre::{eyre::eyre, Result};
 use futures_lite::{stream, StreamExt};
-use gumdrop::Options;
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use once_cell::sync::{Lazy, OnceCell};
 use std::{
@@ -18,14 +18,13 @@ mod model;
 
 use crate::copy_dir::copy_dir_all;
 
-#[derive(Debug, Options)]
+#[derive(Debug, Parser)]
 struct Args {
-    #[options(short = "h")]
-    help: bool,
-    #[options(short = "d")]
+    /// Path to the directory for the modpack
+    #[clap(short, long)]
     destination: Option<String>,
-    #[options(free)]
-    manifest_path: String,
+    /// Path to manifest.json
+    manifest_path: PathBuf,
 }
 
 #[derive(Debug)]
@@ -49,7 +48,7 @@ static SEMAPHORE: Lazy<Semaphore> = Lazy::new(|| Semaphore::new(3));
 async fn main() -> Result<()> {
     static OUTPUT: OnceCell<PathBuf> = OnceCell::new();
     color_eyre::install()?;
-    let args = Args::parse_args_default_or_exit();
+    let args = Args::parse();
     let target = ProgressDrawTarget::stdout();
     let mp = Arc::new(MultiProgress::with_draw_target(target));
     let mut file = File::open(&args.manifest_path)?;

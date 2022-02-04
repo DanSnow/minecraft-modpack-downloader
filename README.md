@@ -36,4 +36,4 @@ TODO
 ----
 
 - [x] able to configure output path
-- [ ] copy overrides
+- [x] copy overrides
