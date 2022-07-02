@@ -17,12 +17,16 @@ use futures_lite::{stream, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use once_cell::sync::Lazy;
 use tokio::sync::Semaphore;
+use tracing::{debug, info};
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 use crate::copy_dir::copy_dir_all;
 use crate::late_init::LateInit;
 
 #[derive(Debug, Parser)]
 struct Args {
+    #[clap(long)]
+    debug: bool,
     /// Path to the directory for the modpack
     #[clap(short, long)]
     destination: Option<String>,
@@ -52,6 +56,20 @@ async fn main() -> Result<()> {
     static OUTPUT: LateInit<PathBuf> = LateInit::new();
     color_eyre::install()?;
     let args = Args::parse();
+
+    let fmt_layer = fmt::layer();
+    let filter_layer = EnvFilter::try_from_default_env()
+        .or_else(|_| {
+            if args.debug {
+                EnvFilter::try_new("minecraft_modpack_downloader=debug")
+            } else {
+                EnvFilter::try_new("minecraft_modpack_downloader=info")
+            }
+        })
+        .unwrap();
+
+    tracing_subscriber::registry().with(filter_layer).with(fmt_layer).init();
+
     let target = ProgressDrawTarget::stdout();
     let mp = Arc::new(MultiProgress::with_draw_target(target));
     let mut file = File::open(&args.manifest_path)?;
@@ -95,8 +113,12 @@ async fn main() -> Result<()> {
     let mut path = fs::canonicalize(&args.manifest_path)?;
     path.pop();
     path.push(manifest.overrides);
+    debug!("overrides at {}", path.display());
     if path.exists() {
-        copy_dir_all(path, &*OUTPUT).await?;
+        info!("copy overrides");
+        let mut output = OUTPUT.clone();
+        output.pop();
+        copy_dir_all(path, output).await?;
     }
     Ok(())
 }

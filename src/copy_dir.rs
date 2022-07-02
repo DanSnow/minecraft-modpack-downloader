@@ -2,11 +2,14 @@ use std::path::Path;
 
 use color_eyre::Result;
 use tokio::fs;
+use tracing::{debug, instrument};
 
+#[instrument(skip(src, dst))]
 #[async_recursion::async_recursion(?Send)]
 pub async fn copy_dir_all(src: impl AsRef<Path> + 'static, dst: impl AsRef<Path> + 'static) -> Result<()> {
     let src = src.as_ref().to_owned();
     let dst = dst.as_ref().to_owned();
+    debug!("enter {}", src.display());
     fs::create_dir_all(&dst).await?;
     let mut entries = fs::read_dir(src).await?;
     while let Some(entry) = entries.next_entry().await? {
@@ -14,6 +17,7 @@ pub async fn copy_dir_all(src: impl AsRef<Path> + 'static, dst: impl AsRef<Path>
         if ty.is_dir() {
             copy_dir_all(entry.path(), dst.join(entry.file_name())).await?;
         } else {
+            debug!("copy {}", entry.path().display());
             fs::copy(entry.path(), dst.join(entry.file_name())).await?;
         }
     }
