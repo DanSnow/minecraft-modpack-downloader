@@ -1,7 +1,8 @@
+use std::{cmp, path::Path, sync::Arc};
+
 use color_eyre::Result;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
-use std::{cmp, path::PathBuf, sync::Arc};
 use tokio::{fs::File, io::AsyncWriteExt};
 
 static STYLE: Lazy<ProgressStyle> = Lazy::new(|| {
@@ -10,7 +11,8 @@ static STYLE: Lazy<ProgressStyle> = Lazy::new(|| {
         .progress_chars("#>-")
 });
 
-pub async fn download(mp: Arc<MultiProgress>, path: PathBuf, url: String, len: u64) -> Result<()> {
+pub async fn download(mp: Arc<MultiProgress>, path: impl AsRef<Path> + 'static, url: String, len: u64) -> Result<()> {
+    let path = path.as_ref();
     let mut res = reqwest::get(&url).await?;
     let len = res.content_length().unwrap_or(len);
     let mut file = File::create(&path).await?;

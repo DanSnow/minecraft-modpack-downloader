@@ -1,12 +1,10 @@
-use color_eyre::Result;
 use std::path::Path;
+
+use color_eyre::Result;
 use tokio::fs;
 
 #[async_recursion::async_recursion(?Send)]
-pub async fn copy_dir_all(
-    src: impl AsRef<Path> + 'static,
-    dst: impl AsRef<Path> + 'static,
-) -> Result<()> {
+pub async fn copy_dir_all(src: impl AsRef<Path> + 'static, dst: impl AsRef<Path> + 'static) -> Result<()> {
     let src = src.as_ref().to_owned();
     let dst = dst.as_ref().to_owned();
     fs::create_dir_all(&dst).await?;

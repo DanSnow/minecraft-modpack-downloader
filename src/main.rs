@@ -1,22 +1,25 @@
-use clap::Parser;
-use color_eyre::{eyre::eyre, Result};
-use futures_lite::{stream, StreamExt};
-use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
-use once_cell::sync::{Lazy, OnceCell};
+mod api;
+mod copy_dir;
+mod download;
+mod late_init;
+mod model;
+
 use std::{
     env,
     fs::{self, File},
     path::PathBuf,
     sync::Arc,
 };
+
+use clap::Parser;
+use color_eyre::{eyre::eyre, Result};
+use futures_lite::{stream, StreamExt};
+use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
+use once_cell::sync::Lazy;
 use tokio::sync::Semaphore;
 
-mod api;
-mod copy_dir;
-mod download;
-mod model;
-
 use crate::copy_dir::copy_dir_all;
+use crate::late_init::LateInit;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -46,7 +49,7 @@ static SEMAPHORE: Lazy<Semaphore> = Lazy::new(|| Semaphore::new(3));
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    static OUTPUT: OnceCell<PathBuf> = OnceCell::new();
+    static OUTPUT: LateInit<PathBuf> = LateInit::new();
     color_eyre::install()?;
     let args = Args::parse();
     let target = ProgressDrawTarget::stdout();
@@ -61,15 +64,12 @@ async fn main() -> Result<()> {
     );
     let output_path = create_output_path(&args, &manifest.name)?;
     fs::create_dir_all(&output_path)?;
-    let _ = OUTPUT.set(output_path);
+    OUTPUT.init(output_path);
     let total = manifest.files.len() as u64;
     stream::iter(manifest.files.iter())
         .for_each(|&file| {
             let mp = mp.clone();
-            let pb_guard = ProgressGuard {
-                pb: pb.clone(),
-                total,
-            };
+            let pb_guard = ProgressGuard { pb: pb.clone(), total };
             tokio::spawn(async move {
                 let _guard = SEMAPHORE.acquire().await?;
                 let files = api::get_mod_files(file.project_id).await?;
@@ -77,14 +77,14 @@ async fn main() -> Result<()> {
                     .into_iter()
                     .find(move |f| f.id == file.file_id)
                     .ok_or_else(|| eyre!("can not found specific file for {}", file.project_id))?;
-                let mut path = OUTPUT.get().unwrap().clone();
+                let mut path = OUTPUT.clone();
                 path.push(&mod_file.file_name);
                 let model::ModFile {
                     download_url,
                     file_length,
                     ..
                 } = mod_file;
-                download::download(mp, path, download_url, file_length).await?;
+                download::download(mp, &*OUTPUT, download_url, file_length).await?;
                 // explicit move progress bar guard
                 drop(pb_guard);
                 Ok::<(), color_eyre::eyre::Error>(())
@@ -96,7 +96,7 @@ async fn main() -> Result<()> {
     path.pop();
     path.push(manifest.overrides);
     if path.exists() {
-        copy_dir_all(path, OUTPUT.get().unwrap().clone()).await?;
+        copy_dir_all(path, &*OUTPUT).await?;
     }
     Ok(())
 }

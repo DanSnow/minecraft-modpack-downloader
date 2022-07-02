@@ -1,6 +1,6 @@
 max_width = 120
-group_imports = "Always"
+group_imports = "StdExternalCrate"
 edition = "2018"
 version = "One"
-required_version = "1.4.36"
+required_version = "1.5.1"
 ignore = []
