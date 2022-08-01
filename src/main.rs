@@ -77,8 +77,9 @@ async fn main() -> Result<()> {
     let pb = mp.add(ProgressBar::new(manifest.files.len() as u64));
     pb.set_style(
         ProgressStyle::default_bar()
+            .progress_chars("##-")
             .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-            .progress_chars("##-"),
+            .expect("Fail to create progress bar style"),
     );
     let output_path = create_output_path(&args, &manifest.name)?;
     fs::create_dir_all(&output_path)?;
@@ -109,7 +110,6 @@ async fn main() -> Result<()> {
             });
         })
         .await;
-    mp.join()?;
     let mut path = fs::canonicalize(&args.manifest_path)?;
     path.pop();
     path.push(manifest.overrides);
