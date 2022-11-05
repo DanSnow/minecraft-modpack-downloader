@@ -25,10 +25,10 @@ use crate::late_init::LateInit;
 
 #[derive(Debug, Parser)]
 struct Args {
-    #[clap(long)]
+    #[arg(long)]
     debug: bool,
     /// Path to the directory for the modpack
-    #[clap(short, long)]
+    #[arg(short, long)]
     destination: Option<String>,
     /// Path to manifest.json
     manifest_path: PathBuf,
