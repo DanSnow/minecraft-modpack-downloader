@@ -9,7 +9,7 @@ include = ["src/**/*", "README.md"]
 
 [dependencies]
 async-recursion = "1.0.4"
-clap = { version = "4.3.19", features = ["derive"] }
+clap = { version = "4.3.21", features = ["derive"] }
 color-eyre = "0.6.2"
 futures-lite = "1.13.0"
 indicatif = "0.17.6"
