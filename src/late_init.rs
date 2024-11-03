@@ -1,15 +1,13 @@
-use std::ops::Deref;
-
-use once_cell::sync::OnceCell;
+use std::{ops::Deref, sync::OnceLock};
 
 #[derive(Debug)]
 pub struct LateInit<T> {
-    cell: OnceCell<T>,
+    cell: OnceLock<T>,
 }
 
 impl<T> LateInit<T> {
     pub const fn new() -> Self {
-        Self { cell: OnceCell::new() }
+        Self { cell: OnceLock::new() }
     }
 
     pub fn init(&self, value: T) {

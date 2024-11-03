@@ -8,14 +8,13 @@ use std::{
     env,
     fs::{self, File},
     path::PathBuf,
-    sync::Arc,
+    sync::{Arc, LazyLock},
 };
 
 use clap::Parser;
 use color_eyre::{eyre::eyre, Result};
 use futures_lite::{stream, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
-use once_cell::sync::Lazy;
 use tokio::sync::Semaphore;
 use tracing::{debug, info};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
@@ -49,7 +48,7 @@ impl Drop for ProgressGuard {
     }
 }
 
-static SEMAPHORE: Lazy<Semaphore> = Lazy::new(|| Semaphore::new(3));
+static SEMAPHORE: LazyLock<Semaphore> = LazyLock::new(|| Semaphore::new(3));
 
 #[tokio::main]
 async fn main() -> Result<()> {
