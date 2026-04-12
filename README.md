@@ -1,6 +1,8 @@
 minecraft-modpack-downloader
 ============================
 
+> I'm not using this anymore. Consider try https://github.com/gorilla-devs/ferium
+
 When you want to play a modpack with any your favorite launcher.
 
 Why made this?
